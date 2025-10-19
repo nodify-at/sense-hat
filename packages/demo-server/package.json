@@ -30,7 +30,7 @@
     "ts-node": "^10.9.2",
     "typescript": "~5.9.2"
   },
-  "author": "",
+  "author": "Hasan Oezdemir <21654050+nodify-at@users.noreply.github.com>",
   "license": "MIT",
   "description": ""
 }
