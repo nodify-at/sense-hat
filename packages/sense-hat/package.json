@@ -1,0 +1,46 @@
+{
+  "name": "@nodify-at/sense-hat",
+  "version": "1.0.0",
+  "description": "Raspberry Pi Sense HAT controller with TypeScript support",
+  "type": "module",
+  "main": "src/index.ts",
+  "types": "src/index.ts",
+  "publishConfig": {
+    "main": "./dist/index.js",
+    "types": "./dist/index.d.ts",
+    "exports": {
+      ".": {
+        "types": "./dist/index.d.ts",
+        "import": "./dist/index.js"
+      }
+    }
+  },
+  "scripts": {
+    "build": "tsc",
+    "dev": "tsc --watch",
+    "lint": "eslint .",
+    "lint:fix": "eslint . --fix",
+    "format": "prettier --write \"**/*.ts\"",
+    "format:check": "prettier --check \"**/*.ts\""
+  },
+  "keywords": [
+    "sense-hat",
+    "raspberry-pi",
+    "i2c",
+    "sensors",
+    "led-matrix"
+  ],
+  "author": "Hasan Oezdemir <21654050+nodify-at@users.noreply.github.com>",
+  "license": "MIT",
+  "dependencies": {
+    "@nodify-at/types": "*",
+    "i2c-bus": "^5.2.3",
+    "onoff": "^6.0.3"
+  },
+  "devDependencies": {
+    "@types/i2c-bus": "^5.1.2"
+  },
+  "engines": {
+    "node": ">=22.0.0"
+  }
+}

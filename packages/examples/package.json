@@ -1,0 +1,32 @@
+{
+  "name": "examples",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Examples for @nodify-at/sense-hat",
+  "type": "module",
+  "scripts": {
+    "build": "tsc",
+    "dev": "tsc --watch",
+    "lint": "eslint .",
+    "lint:fix": "eslint . --fix",
+    "format": "prettier --write \"**/*.ts\"",
+    "format:check": "prettier --check \"**/*.ts\"",
+    "example:basic": "npm run build && node dist/basic-usage.js",
+    "example:monitor": "npm run build && node dist/monitor-loop.js",
+    "example:led-basic": "npm run build && node dist/led-basic.js",
+    "example:led-rainbow": "npm run build && node dist/led-rainbow.js",
+    "example:led-scrolling": "npm run build && node dist/led-scrolling-text.js",
+    "example:led-snake": "npm run build && node dist/led-snake-game.js",
+    "example:led-bouncing": "npm run build && node dist/led-bouncing-ball.js",
+    "example:led-fireworks": "npm run build && node dist/led-fireworks.js",
+    "example:led-matrix": "npm run build && node dist/led-matrix-patterns.js"
+  },
+  "dependencies": {
+    "@nodify-at/sense-hat": "*"
+  },
+  "devDependencies": {
+  },
+  "engines": {
+    "node": ">=22.0.0"
+  }
+}
