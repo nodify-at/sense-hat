@@ -65,34 +65,34 @@
 </script>
 
 <div
-	class="vector-card group"
+	class="relative h-full group"
 	in:fly={{ y: 20, duration: 600, delay: Math.random() * 100, easing: cubicOut }}
 >
-	<div class="card-inner bg-gradient-to-br {config.gradient} border {config.border}">
+	<div class="relative h-full p-6 rounded-2xl bg-slate-900/60 backdrop-blur-xl border overflow-hidden transition-all duration-300 ease-[cubic-bezier(0.4,0,0.2,1)] bg-gradient-to-br {config.gradient} {config.border} group-hover:-translate-y-0.5">
 		<!-- Glow Effect -->
-		<div class="card-glow {config.glow}"></div>
+		<div class="absolute -inset-5 opacity-0 transition-opacity duration-300 ease-out pointer-events-none group-hover:opacity-100 {config.glow}"></div>
 
 		<!-- Content -->
-		<div class="card-content">
-			<div class="card-header">
+		<div class="relative z-10 flex flex-col gap-5 h-full">
+			<div class="flex items-center gap-2.5">
 				{#if icon}
-					<span class="card-icon" style="filter: {config.iconGlow}">{icon}</span>
+					<span class="text-2xl transition-transform duration-300 ease-out group-hover:scale-110 group-hover:rotate-[5deg]" style="filter: {config.iconGlow}">{icon}</span>
 				{/if}
-				<h3 class="card-title">{title}</h3>
+				<h3 class="text-[0.8125rem] font-semibold text-slate-300 uppercase tracking-wider">{title}</h3>
 			</div>
 
-			<div class="axes-grid">
+			<div class="grid grid-cols-3 gap-4 flex-1">
 				{#each ['x', 'y', 'z'] as axis}
-					<div class="axis-item">
+					<div class="flex flex-col items-center gap-2.5">
 						<!-- Axis Label -->
-						<div class="axis-label">{axis.toUpperCase()}</div>
+						<div class="text-xs font-bold text-slate-500 tracking-wider">{axis.toUpperCase()}</div>
 
 						<!-- Bar Visualizer -->
-						<div class="bar-container">
-							<div class="bar-track">
+						<div class="flex-1 w-full flex items-end justify-center min-h-[80px]">
+							<div class="w-3/5 h-full bg-slate-800/60 rounded-md relative overflow-hidden flex items-end border border-slate-600/30">
 								{#if data}
 									<div
-										class="bar-fill"
+										class="w-full min-h-[2px] rounded-t-md transition-[height] duration-[400ms] ease-[cubic-bezier(0.4,0,0.2,1)] shadow-[0_0_12px_currentColor] opacity-80"
 										style="height: {getBarHeight(data[axis as keyof typeof data])}%; background: {config.barColor};"
 									></div>
 								{/if}
@@ -100,7 +100,7 @@
 						</div>
 
 						<!-- Value -->
-						<div class="axis-value" class:updating={updatingAxis[axis]}>
+						<div class="text-lg font-bold text-slate-100 font-mono transition-all duration-300 ease-out" class:scale-110={updatingAxis[axis]} class:text-cyan-400={updatingAxis[axis]}>
 							{data ? data[axis].toFixed(2) : '-'}
 						</div>
 					</div>
@@ -109,178 +109,29 @@
 		</div>
 
 		<!-- Shine overlay -->
-		<div class="shine"></div>
+		<div class="absolute inset-0 -translate-x-full transition-transform duration-600 ease-out pointer-events-none group-hover:translate-x-full" style="background: linear-gradient(110deg, transparent 20%, rgba(255, 255, 255, 0.05) 40%, rgba(255, 255, 255, 0.1) 50%, rgba(255, 255, 255, 0.05) 60%, transparent 80%)"></div>
 	</div>
 </div>
 
 <style>
-	.vector-card {
-		position: relative;
-		height: 100%;
-	}
-
-	.card-inner {
-		position: relative;
-		height: 100%;
-		padding: 1.5rem;
-		border-radius: 1rem;
-		background-color: rgba(15, 23, 42, 0.6);
-		backdrop-filter: blur(12px);
-		border-width: 1px;
-		overflow: hidden;
-		transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-	}
-
-	.vector-card:hover .card-inner {
-		transform: translateY(-2px);
-	}
-
-	.card-glow {
-		position: absolute;
-		inset: -20px;
-		opacity: 0;
-		transition: opacity 0.3s ease;
-		pointer-events: none;
-	}
-
-	.vector-card:hover .card-glow {
-		opacity: 1;
-	}
-
-	.card-content {
-		position: relative;
-		z-index: 10;
-		display: flex;
-		flex-direction: column;
-		gap: 1.25rem;
-		height: 100%;
-	}
-
-	.card-header {
-		display: flex;
-		align-items: center;
-		gap: 0.625rem;
-	}
-
-	.card-icon {
-		font-size: 1.5rem;
-		transition: transform 0.3s ease;
-	}
-
-	.vector-card:hover .card-icon {
-		transform: scale(1.15) rotate(5deg);
-	}
-
-	.card-title {
-		font-size: 0.8125rem;
-		font-weight: 600;
-		color: #cbd5e1;
-		text-transform: uppercase;
-		letter-spacing: 0.05em;
-	}
-
-	.axes-grid {
-		display: grid;
-		grid-template-columns: repeat(3, 1fr);
-		gap: 1rem;
-		flex: 1;
-	}
-
-	.axis-item {
-		display: flex;
-		flex-direction: column;
-		align-items: center;
-		gap: 0.625rem;
-	}
-
-	.axis-label {
-		font-size: 0.75rem;
-		font-weight: 700;
-		color: #64748b;
-		letter-spacing: 0.05em;
-	}
-
-	.bar-container {
-		flex: 1;
-		width: 100%;
-		display: flex;
-		align-items: flex-end;
-		justify-content: center;
-		min-height: 80px;
-	}
-
-	.bar-track {
-		width: 60%;
-		height: 100%;
-		background: rgba(30, 41, 59, 0.6);
-		border-radius: 0.375rem;
-		position: relative;
-		overflow: hidden;
-		display: flex;
-		align-items: flex-end;
-		border: 1px solid rgba(71, 85, 105, 0.3);
-	}
-
-	.bar-fill {
-		width: 100%;
-		min-height: 2px;
-		border-radius: 0.375rem 0.375rem 0 0;
-		transition: height 0.4s cubic-bezier(0.4, 0, 0.2, 1);
-		box-shadow: 0 0 12px currentColor;
-		opacity: 0.8;
-	}
-
-	.axis-value {
-		font-size: 1.125rem;
-		font-weight: 700;
-		color: #f1f5f9;
-		font-family: 'SF Mono', 'Monaco', 'Cascadia Code', monospace;
-		transition: all 0.3s ease;
-	}
-
-	.axis-value.updating {
-		transform: scale(1.1);
-		color: #38bdf8;
-	}
-
-	.shine {
-		position: absolute;
-		inset: 0;
-		background: linear-gradient(
-			110deg,
-			transparent 20%,
-			rgba(255, 255, 255, 0.05) 40%,
-			rgba(255, 255, 255, 0.1) 50%,
-			rgba(255, 255, 255, 0.05) 60%,
-			transparent 80%
-		);
-		transform: translateX(-100%);
-		transition: transform 0.6s ease;
-		pointer-events: none;
-	}
-
-	.vector-card:hover .shine {
-		transform: translateX(100%);
-	}
-
 	@media (max-width: 768px) {
-		.card-inner {
+		:global(.relative.h-full.group > div) {
 			padding: 1.25rem;
 		}
 
-		.axes-grid {
+		:global(.relative.h-full.group .grid.grid-cols-3) {
 			gap: 0.75rem;
 		}
 
-		.bar-container {
+		:global(.relative.h-full.group .min-h-\[80px\]) {
 			min-height: 60px;
 		}
 
-		.axis-value {
+		:global(.relative.h-full.group .text-lg) {
 			font-size: 1rem;
 		}
 
-		.card-icon {
+		:global(.relative.h-full.group .text-2xl) {
 			font-size: 1.25rem;
 		}
 	}

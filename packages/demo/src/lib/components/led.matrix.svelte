@@ -1,7 +1,7 @@
 <script lang="ts">
-	import { senseHatStore } from '$lib/stores/sensehat.svelte'
+  import { senseHatStore } from "$lib/stores/sensehat.svelte";
 
-	let selectedColor = $state({ r: 255, g: 0, b: 0 })
+  let selectedColor = $state({ r: 255, g: 0, b: 0 })
 	let messageText = $state('')
 	let scrollSpeed = $state(0.1)
 
@@ -46,18 +46,73 @@
 		const [r, g, b] = grid[y][x]
 		return rgbToHex(r, g, b)
 	}
+
+	// Gradient presets
+	const gradients = [
+		{ name: '🌅 Sunset', id: 'sunset' },
+		{ name: '🌊 Ocean', id: 'ocean' },
+		{ name: '🔥 Fire', id: 'fire' },
+		{ name: '🌈 Rainbow', id: 'rainbow' },
+		{ name: '💜 Purple Dream', id: 'purple' },
+		{ name: '🌲 Forest', id: 'forest' },
+		{ name: '🌸 Cherry Blossom', id: 'cherry' },
+		{ name: '⚡ Electric', id: 'electric' }
+	]
+
+	function interpolateColor(color1: number[], color2: number[], factor: number): number[] {
+		return [
+			Math.round(color1[0] + (color2[0] - color1[0]) * factor),
+			Math.round(color1[1] + (color2[1] - color1[1]) * factor),
+			Math.round(color1[2] + (color2[2] - color1[2]) * factor)
+		]
+	}
+
+	function applyGradient(gradientId: string) {
+		const gradientMap: Record<string, number[][]> = {
+			sunset: [[255, 100, 50], [255, 180, 100], [255, 220, 150]],
+			ocean: [[0, 50, 100], [0, 120, 180], [100, 200, 255]],
+			fire: [[255, 0, 0], [255, 100, 0], [255, 200, 0]],
+			rainbow: [[255, 0, 0], [255, 127, 0], [255, 255, 0], [0, 255, 0], [0, 0, 255], [75, 0, 130], [148, 0, 211]],
+			purple: [[75, 0, 130], [138, 43, 226], [218, 112, 214]],
+			forest: [[0, 50, 0], [0, 100, 50], [50, 200, 100]],
+			cherry: [[255, 182, 193], [255, 105, 180], [255, 20, 147]],
+			electric: [[0, 255, 255], [0, 150, 255], [100, 50, 255]]
+		}
+
+		const colors = gradientMap[gradientId]
+		if (!colors) return
+
+		// Create gradient across the 8x8 grid
+		for (let y = 0; y < 8; y++) {
+			for (let x = 0; x < 8; x++) {
+				// Calculate position factor (0 to 1) diagonally
+				const factor = (x + y) / 14
+
+				// Find which color segment we're in
+				const segmentCount = colors.length - 1
+				const segment = Math.min(Math.floor(factor * segmentCount), segmentCount - 1)
+				const segmentFactor = (factor * segmentCount) - segment
+
+				// Interpolate between the two colors
+        grid[y][x] = interpolateColor(colors[segment], colors[segment + 1], segmentFactor)
+			}
+		}
+
+		// Auto-apply the gradient to the hardware
+		applyGrid()
+	}
 </script>
 
-<div class="led-container">
-	<div class="led-header">
-		<div class="section-icon">💡</div>
-		<h2 class="section-title">LED Matrix Control</h2>
+<div class="flex flex-col gap-6 bg-slate-900/60 backdrop-blur-xl border border-cyan-400/20 rounded-2xl p-6">
+	<div class="flex items-center gap-3">
+		<div class="text-2xl" style="filter: drop-shadow(0 0 8px rgba(56, 189, 248, 0.4))">💡</div>
+		<h2 class="text-xl font-bold text-slate-100 tracking-tight">LED Matrix Control</h2>
 	</div>
 
-	<div class="led-content">
+	<div class="flex flex-col gap-6 items-center">
 		<!-- Color Picker -->
-		<div class="control-group">
-			<label class="control-label">
+		<div class="flex items-center gap-4 w-full max-w-md">
+			<label class="flex items-center gap-3 text-slate-300 text-sm font-semibold">
 				<span>Pick Color</span>
 				<input
 					type="color"
@@ -68,18 +123,18 @@
 						selectedColor.g = parseInt(hex.slice(3, 5), 16)
 						selectedColor.b = parseInt(hex.slice(5, 7), 16)
 					}}
-					class="color-picker"
+					class="w-16 h-10 border-2 border-cyan-400/30 rounded-lg cursor-pointer bg-transparent"
 				/>
 			</label>
-			<div class="color-preview" style="background: {rgbToHex(selectedColor.r, selectedColor.g, selectedColor.b)}"></div>
+			<div class="w-10 h-10 rounded-lg border-2 border-cyan-400/30 shadow-[0_0_10px_rgba(56,189,248,0.2)]" style="background: {rgbToHex(selectedColor.r, selectedColor.g, selectedColor.b)}"></div>
 		</div>
 
 		<!-- 8x8 LED Grid -->
-		<div class="led-grid">
+		<div class="grid grid-cols-8 gap-1.5 p-4 bg-[#0a0a0f]/80 rounded-xl border-2 border-cyan-400/30 shadow-[inset_0_0_20px_rgba(0,0,0,0.5)]">
 			{#each Array(8) as _, y}
 				{#each Array(8) as _, x}
 					<button
-						class="led-pixel"
+						class="w-10 h-10 border border-slate-500/30 rounded cursor-pointer transition-all duration-150 ease-out bg-black hover:scale-110 hover:border-cyan-400/60 hover:shadow-[0_0_10px_rgba(56,189,248,0.4)]"
 						style="background-color: {getPixelColor(x, y)}"
 						onclick={() => handlePixelClick(x, y)}
 						aria-label="Pixel {x},{y}"
@@ -89,22 +144,37 @@
 		</div>
 
 		<!-- Control Buttons -->
-		<div class="button-group">
-			<button class="btn btn-primary" onclick={applyGrid}>Apply Grid</button>
-			<button class="btn btn-secondary" onclick={clearMatrix}>Clear</button>
+		<div class="flex gap-4 w-full max-w-md">
+			<button class="flex-1 px-6 py-3 border-0 rounded-lg text-sm font-semibold cursor-pointer transition-all duration-200 shadow-md bg-gradient-to-br from-cyan-400 to-blue-500 text-white hover:-translate-y-0.5 hover:shadow-[0_6px_12px_rgba(56,189,248,0.4)]" onclick={applyGrid}>Apply Grid</button>
+			<button class="flex-1 px-6 py-3 border border-slate-500/40 rounded-lg text-sm font-semibold cursor-pointer transition-all duration-200 shadow-md bg-slate-500/30 text-slate-300 hover:bg-slate-500/40 hover:border-slate-500/60" onclick={clearMatrix}>Clear</button>
+		</div>
+
+		<!-- Gradient Presets -->
+		<div class="flex flex-col gap-4 w-full max-w-md pt-4 border-t border-cyan-400/20">
+			<h3 class="text-base font-semibold text-slate-100 m-0">✨ Gradient Presets</h3>
+			<div class="grid grid-cols-2 gap-2">
+				{#each gradients as gradient}
+					<button
+						class="px-4 py-2.5 border-0 rounded-lg text-xs font-semibold cursor-pointer transition-all duration-200 bg-gradient-to-r from-purple-500/20 to-pink-500/20 border-purple-400/30 text-slate-200 hover:from-purple-500/30 hover:to-pink-500/30 hover:border-purple-400/50 hover:-translate-y-0.5 hover:shadow-lg"
+						onclick={() => applyGradient(gradient.id)}
+					>
+						{gradient.name}
+					</button>
+				{/each}
+			</div>
 		</div>
 
 		<!-- Message Scroll -->
-		<div class="message-group">
-			<h3 class="subsection-title">Scrolling Message</h3>
-			<div class="input-row">
+		<div class="flex flex-col gap-4 w-full max-w-md pt-4 border-t border-cyan-400/20">
+			<h3 class="text-base font-semibold text-slate-100 m-0">Scrolling Message</h3>
+			<div class="flex gap-3 items-center max-md:flex-col max-md:items-stretch">
 				<input
 					type="text"
 					bind:value={messageText}
 					placeholder="Enter message..."
-					class="text-input"
+					class="flex-1 px-3 py-3 bg-slate-900/60 border border-cyan-400/30 rounded-lg text-slate-100 text-sm outline-none transition-[border-color] duration-200 placeholder:text-slate-500 focus:border-cyan-400/60 focus:shadow-[0_0_0_3px_rgba(56,189,248,0.1)]"
 				/>
-				<label class="speed-label">
+				<label class="flex items-center gap-2 text-slate-300 text-sm font-semibold whitespace-nowrap max-md:justify-between">
 					<span>Speed</span>
 					<input
 						type="number"
@@ -112,254 +182,12 @@
 						min="0.01"
 						max="1"
 						step="0.01"
-						class="speed-input"
+						class="w-20 px-2 py-2 bg-slate-900/60 border border-cyan-400/30 rounded-lg text-slate-100 text-sm outline-none focus:border-cyan-400/60"
 					/>
 				</label>
 			</div>
-			<button class="btn btn-success" onclick={showScrollingMessage}>Show Message</button>
+			<button class="w-full max-w-md px-6 py-3 border-0 rounded-lg text-sm font-semibold cursor-pointer transition-all duration-200 shadow-md bg-gradient-to-br from-emerald-500 to-emerald-600 text-white hover:-translate-y-0.5 hover:shadow-[0_6px_12px_rgba(16,185,129,0.4)]" onclick={showScrollingMessage}>Show Message</button>
 		</div>
 	</div>
 </div>
 
-<style>
-	.led-container {
-		background: rgba(15, 23, 42, 0.6);
-		backdrop-filter: blur(12px);
-		border: 1px solid rgba(56, 189, 248, 0.2);
-		border-radius: 1rem;
-		padding: 1.5rem;
-		display: flex;
-		flex-direction: column;
-		gap: 1.5rem;
-	}
-
-	.led-header {
-		display: flex;
-		align-items: center;
-		gap: 0.75rem;
-	}
-
-	.section-icon {
-		font-size: 1.5rem;
-		filter: drop-shadow(0 0 8px rgba(56, 189, 248, 0.4));
-	}
-
-	.section-title {
-		font-size: 1.25rem;
-		font-weight: 700;
-		color: #f1f5f9;
-		letter-spacing: -0.02em;
-		margin: 0;
-	}
-
-	.led-content {
-		display: flex;
-		flex-direction: column;
-		gap: 1.5rem;
-		align-items: center;
-	}
-
-	.control-group {
-		display: flex;
-		align-items: center;
-		gap: 1rem;
-		width: 100%;
-		max-width: 400px;
-	}
-
-	.control-label {
-		display: flex;
-		align-items: center;
-		gap: 0.75rem;
-		color: #cbd5e1;
-		font-size: 0.875rem;
-		font-weight: 600;
-	}
-
-	.color-picker {
-		width: 4rem;
-		height: 2.5rem;
-		border: 2px solid rgba(56, 189, 248, 0.3);
-		border-radius: 0.5rem;
-		cursor: pointer;
-		background: transparent;
-	}
-
-	.color-preview {
-		width: 2.5rem;
-		height: 2.5rem;
-		border-radius: 0.5rem;
-		border: 2px solid rgba(56, 189, 248, 0.3);
-		box-shadow: 0 0 10px rgba(56, 189, 248, 0.2);
-	}
-
-	.led-grid {
-		display: grid;
-		grid-template-columns: repeat(8, 1fr);
-		gap: 0.375rem;
-		padding: 1rem;
-		background: rgba(10, 10, 15, 0.8);
-		border-radius: 0.75rem;
-		border: 2px solid rgba(56, 189, 248, 0.3);
-		box-shadow: inset 0 0 20px rgba(0, 0, 0, 0.5);
-	}
-
-	.led-pixel {
-		width: 2.5rem;
-		height: 2.5rem;
-		border: 1px solid rgba(100, 116, 139, 0.3);
-		border-radius: 0.25rem;
-		cursor: pointer;
-		transition: all 0.15s ease;
-		background-color: #000;
-	}
-
-	.led-pixel:hover {
-		transform: scale(1.1);
-		border-color: rgba(56, 189, 248, 0.6);
-		box-shadow: 0 0 10px rgba(56, 189, 248, 0.4);
-	}
-
-	.button-group {
-		display: flex;
-		gap: 1rem;
-		width: 100%;
-		max-width: 400px;
-	}
-
-	.btn {
-		flex: 1;
-		padding: 0.75rem 1.5rem;
-		border: none;
-		border-radius: 0.5rem;
-		font-size: 0.875rem;
-		font-weight: 600;
-		cursor: pointer;
-		transition: all 0.2s ease;
-		box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-	}
-
-	.btn-primary {
-		background: linear-gradient(135deg, #38bdf8, #3b82f6);
-		color: white;
-	}
-
-	.btn-primary:hover {
-		transform: translateY(-2px);
-		box-shadow: 0 6px 12px rgba(56, 189, 248, 0.4);
-	}
-
-	.btn-secondary {
-		background: rgba(100, 116, 139, 0.3);
-		color: #cbd5e1;
-		border: 1px solid rgba(100, 116, 139, 0.4);
-	}
-
-	.btn-secondary:hover {
-		background: rgba(100, 116, 139, 0.4);
-		border-color: rgba(100, 116, 139, 0.6);
-	}
-
-	.btn-success {
-		background: linear-gradient(135deg, #10b981, #059669);
-		color: white;
-		width: 100%;
-		max-width: 400px;
-	}
-
-	.btn-success:hover {
-		transform: translateY(-2px);
-		box-shadow: 0 6px 12px rgba(16, 185, 129, 0.4);
-	}
-
-	.message-group {
-		display: flex;
-		flex-direction: column;
-		gap: 1rem;
-		width: 100%;
-		max-width: 400px;
-		padding-top: 1rem;
-		border-top: 1px solid rgba(56, 189, 248, 0.2);
-	}
-
-	.subsection-title {
-		font-size: 1rem;
-		font-weight: 600;
-		color: #f1f5f9;
-		margin: 0;
-	}
-
-	.input-row {
-		display: flex;
-		gap: 0.75rem;
-		align-items: center;
-	}
-
-	.text-input {
-		flex: 1;
-		padding: 0.75rem;
-		background: rgba(15, 23, 42, 0.6);
-		border: 1px solid rgba(56, 189, 248, 0.3);
-		border-radius: 0.5rem;
-		color: #f1f5f9;
-		font-size: 0.875rem;
-		outline: none;
-		transition: border-color 0.2s ease;
-	}
-
-	.text-input:focus {
-		border-color: rgba(56, 189, 248, 0.6);
-		box-shadow: 0 0 0 3px rgba(56, 189, 248, 0.1);
-	}
-
-	.text-input::placeholder {
-		color: #64748b;
-	}
-
-	.speed-label {
-		display: flex;
-		align-items: center;
-		gap: 0.5rem;
-		color: #cbd5e1;
-		font-size: 0.875rem;
-		font-weight: 600;
-		white-space: nowrap;
-	}
-
-	.speed-input {
-		width: 5rem;
-		padding: 0.5rem;
-		background: rgba(15, 23, 42, 0.6);
-		border: 1px solid rgba(56, 189, 248, 0.3);
-		border-radius: 0.5rem;
-		color: #f1f5f9;
-		font-size: 0.875rem;
-		outline: none;
-	}
-
-	.speed-input:focus {
-		border-color: rgba(56, 189, 248, 0.6);
-	}
-
-	/* Responsive */
-	@media (max-width: 768px) {
-		.led-grid {
-			gap: 0.25rem;
-			padding: 0.75rem;
-		}
-
-		.led-pixel {
-			width: 2rem;
-			height: 2rem;
-		}
-
-		.input-row {
-			flex-direction: column;
-			align-items: stretch;
-		}
-
-		.speed-label {
-			justify-content: space-between;
-		}
-	}
-</style>
